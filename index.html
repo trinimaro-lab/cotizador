@@ -126,6 +126,19 @@
     padding: 4px 2px;
   }
   table.items input:focus { outline: none; background: var(--accent-soft); }
+  textarea.f-desc {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 4px 2px;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.4;
+    display: block;
+  }
+  textarea.f-desc:focus { outline: none; background: var(--accent-soft); }
   .col-qty input, .col-price input { text-align: right; }
   .col-total { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .col-del { width: 32px; text-align: center; }
@@ -657,12 +670,21 @@
     return isNaN(n) ? 0 : n;
   }
 
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
   function makeRow(desc, qty, price, catalogId) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="col-catalog"><select class="f-catalog"></select></td>
       <td>
-        <input class="f-desc" type="text" value="${desc || ''}" placeholder="Escribe una descripción">
+        <textarea class="f-desc" rows="1" placeholder="Escribe una descripción">${escapeHtml(desc || '')}</textarea>
       </td>
       <td class="col-qty"><input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}"></td>
       <td class="col-price"><input class="f-price" type="number" min="0" step="1" value="${price ?? 0}"></td>
@@ -680,10 +702,12 @@
       }
       recalc();
     });
+    const descEl = tr.querySelector('.f-desc');
+    descEl.addEventListener('input', () => { autoGrow(descEl); save(); });
     tr.querySelector('.f-qty').addEventListener('input', recalc);
     tr.querySelector('.f-price').addEventListener('input', recalc);
-    tr.querySelector('.f-desc').addEventListener('input', save);
     tr.querySelector('.del-btn').addEventListener('click', () => { tr.remove(); recalc(); });
+    requestAnimationFrame(() => autoGrow(descEl));
     return tr;
   }
 
