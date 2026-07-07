@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cotizador de Diseño</title>
+<style>
+  :root {
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #d9dce1;
+    --accent: #2f5d50;
+    --accent-soft: #eaf1ee;
+    --bg: #f4f5f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    margin: 0;
+    padding: 32px 16px;
+  }
+  .sheet {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    padding: 48px;
+  }
+  .brand-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
+  .brand-row input {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    color: inherit;
+  }
+  .brand-name {
+    font-size: 22px;
+    font-weight: 700;
+    width: 100%;
+  }
+  .brand-sub {
+    font-size: 13px;
+    color: var(--muted);
+    width: 100%;
+    margin-top: 4px;
+  }
+  .doc-title {
+    text-align: right;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .meta-field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .meta-field input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 4px 2px;
+    font-family: inherit;
+    font-size: 14px;
+    background: transparent;
+  }
+  .meta-field input:focus { outline: none; border-color: var(--accent); }
+
+  table.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  table.items th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding: 8px 6px;
+    border-bottom: 2px solid var(--ink);
+  }
+  table.items td {
+    padding: 6px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  table.items input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 4px 2px;
+  }
+  table.items input:focus { outline: none; background: var(--accent-soft); }
+  .col-qty input, .col-price input { text-align: right; }
+  .col-total { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .col-del { width: 32px; text-align: center; }
+  .col-catalog select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 4px 2px;
+  }
+  .col-catalog select:focus { outline: none; background: var(--accent-soft); }
+  .item-note {
+    display: none;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .item-note.visible { display: block; }
+  .sg-range { color: var(--accent); white-space: nowrap; }
+  .del-btn {
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .del-btn:hover { color: #b3413b; }
+
+  .add-row {
+    margin: 12px 12px 32px 0;
+    border: 1px dashed var(--line);
+    background: none;
+    color: var(--accent);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .add-row:hover { background: var(--accent-soft); }
+
+  .service-guide {
+    margin: 0 0 32px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 16px;
+    background: #fafbfa;
+  }
+  .service-guide summary {
+    cursor: pointer;
+    padding: 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .service-guide h4.sg-cat {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 16px 0 6px;
+  }
+  .service-guide .sg-group {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 12px 0 4px;
+    color: var(--ink);
+  }
+  .service-guide ul.sg-list {
+    margin: 0 0 8px;
+    padding-left: 18px;
+    font-size: 13px;
+  }
+  .service-guide ul.sg-list li { margin-bottom: 6px; }
+
+  .doc-type-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .doc-type-row label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .doc-type-row select {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    background: #fff;
+  }
+
+  .exempt-note {
+    display: none;
+    justify-content: flex-end;
+    margin-bottom: 32px;
+    text-align: right;
+  }
+  .exempt-note.visible { display: flex; flex-direction: column; align-items: flex-end; }
+  .exempt-note label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .exempt-note input {
+    width: 340px;
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+
+  .totals {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+  .totals table { border-collapse: collapse; min-width: 280px; }
+  .totals td { padding: 6px 4px; font-size: 14px; }
+  .totals td:first-child { color: var(--muted); }
+  .totals td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .totals .grand td { font-size: 18px; font-weight: 700; border-top: 2px solid var(--ink); padding-top: 10px; }
+  .iva-rate {
+    width: 40px;
+    border: none;
+    border-bottom: 1px dotted var(--line);
+    text-align: right;
+    font-family: inherit;
+    font-size: 13px;
+    background: transparent;
+  }
+
+  .notes {
+    margin-bottom: 32px;
+  }
+  .notes label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .notes textarea {
+    width: 100%;
+    min-height: 70px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+  .btn {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #244a40; }
+  .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: #f0f0f0; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .sheet { box-shadow: none; padding: 20px; max-width: 100%; }
+    .actions, .add-row, .col-del, .col-catalog, .item-note, .service-guide, .doc-type-row { display: none !important; }
+    .exempt-note input { border: none !important; text-align: right; }
+    input, textarea {
+      border: none !important;
+      background: transparent !important;
+    }
+    .meta-field input { border-bottom: none; }
+    table.items td { border-bottom: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="brand-row">
+      <div style="flex:1">
+        <input class="brand-name" id="brandName" value="Trinidad Marín Roca — Diseño Gráfico" />
+        <input class="brand-sub" id="brandSub" value="trinimaro@gmail.com · +56 9 9240 5072" />
+      </div>
+      <div class="doc-title">COTIZACIÓN</div>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-field">
+        <label>Cliente</label>
+        <input id="client" placeholder="Nombre del cliente" />
+      </div>
+      <div class="meta-field">
+        <label>N° Cotización</label>
+        <input id="docNumber" placeholder="001" />
+      </div>
+      <div class="meta-field">
+        <label>Fecha</label>
+        <input id="docDate" type="date" />
+      </div>
+      <div class="meta-field">
+        <label>Válida hasta</label>
+        <input id="validUntil" type="date" />
+      </div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th class="col-catalog" style="width:20%">Servicio</th>
+          <th style="width:30%">Descripción</th>
+          <th class="col-qty" style="width:12%">Cant.</th>
+          <th class="col-price" style="width:16%">Precio unit.</th>
+          <th style="width:16%">Subtotal</th>
+          <th class="col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+
+    <button class="add-row" id="addRow">+ Agregar ítem</button>
+
+    <details class="service-guide" id="serviceGuideDetails">
+      <summary>📋 Guía de servicios y descripciones (no se imprime)</summary>
+      <div id="serviceGuideContent"></div>
+    </details>
+
+    <div class="doc-type-row">
+      <label>Tipo de documento</label>
+      <select id="docType">
+        <option value="afecta">Factura afecta a IVA</option>
+        <option value="exenta">Factura exenta de IVA</option>
+      </select>
+    </div>
+
+    <div class="totals">
+      <table>
+        <tr>
+          <td id="subtotalLabel">Subtotal</td>
+          <td id="subtotalOut">$0</td>
+        </tr>
+        <tr id="ivaRow">
+          <td>IVA (<input class="iva-rate" id="ivaRate" value="19" />%)</td>
+          <td id="ivaOut">$0</td>
+        </tr>
+        <tr class="grand">
+          <td>Total</td>
+          <td id="totalOut">$0</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="exempt-note" id="exemptNoteWrap">
+      <label>Referencia de exención (se imprime)</label>
+      <input id="exemptNote" type="text" placeholder="Ej: Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825">
+    </div>
+
+    <div class="notes">
+      <label>Notas / Condiciones</label>
+      <textarea id="notes" placeholder="Ej: Precios no incluyen impresión física. Cotización válida por 15 días. Se solicita 50% de anticipo para iniciar el proyecto.">Precios en pesos chilenos (CLP). Cotización válida por 15 días. Se solicita 50% de anticipo para iniciar el proyecto.</textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="clearAll">Limpiar todo</button>
+      <button class="btn btn-primary" id="printBtn">Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const itemsBody = document.getElementById('itemsBody');
+  const STORAGE_KEY = 'cotizador-diseno-data';
+
+  const CATALOG = [
+    {
+      category: '1. Digital',
+      groups: [
+        {
+          group: 'Gestión técnica',
+          items: [
+            { name: 'Compra de dominio (gestión)', desc: 'Compra o registro del dominio a nombre del cliente. No incluye el costo del dominio en sí.', min: 15000, max: 25000 },
+            { name: 'Conexión de dominio', desc: 'Apuntar un dominio ya comprado hacia donde vive el sitio (DNS, nameservers, hosting).', min: 15000, max: 25000 },
+            { name: 'Configuración de correos', desc: 'Crear cuentas de correo con el dominio del cliente y dejarlas funcionando (MX records, Gmail/Outlook u otro).', min: 20000, max: 35000 },
+            { name: 'Redireccionamiento', desc: 'Hacer que una URL redirija automáticamente a otra.', min: 15000, max: 20000 },
+          ],
+        },
+        {
+          group: 'A) Web en Figma',
+          items: [
+            { name: 'Sistema base (paleta, tipografía, componentes)', desc: 'Definición de estilos y componentes reutilizables. Se cobra una sola vez al inicio del proyecto.', min: 150000, max: 300000 },
+            { name: 'Página simple', desc: 'Página de texto + imágenes sin funcionalidad especial (ej. Nosotros, Contacto).', min: 60000, max: 120000 },
+            { name: 'Página compleja', desc: 'Página con formulario, galería filtrable, catálogo, blog o checkout.', min: 120000, max: 250000 },
+            { name: 'Actualización de contenido', desc: 'Modificar textos, imágenes o secciones de un diseño ya existente en Figma.', min: 40000, max: 90000 },
+            { name: 'Agregar contenido a página existente (solo diseño)', desc: 'Sumar una sección o bloque nuevo a un diseño ya hecho, manteniendo el resto intacto.', min: 30000, max: 70000 },
+          ],
+        },
+        {
+          group: 'B) Web en plataforma (Shopify/WordPress/otro)',
+          items: [
+            { name: 'Sistema base (paleta, tipografía, componentes)', desc: 'Definición de estilos y componentes reutilizables dentro de la plataforma. Se cobra una sola vez.', min: 150000, max: 300000 },
+            { name: 'Página simple', desc: 'Página de texto + imágenes sin funcionalidad especial, trabajada directo en el editor de la plataforma.', min: 60000, max: 120000 },
+            { name: 'Página compleja', desc: 'Página con formulario, galería filtrable, catálogo, blog o checkout.', min: 120000, max: 250000 },
+            { name: 'Actualización de contenido', desc: 'Cambios de texto/imágenes en páginas ya existentes dentro de la plataforma.', min: 40000, max: 90000 },
+            { name: 'Agregar contenido a página existente (solo diseño)', desc: 'Sumar una sección nueva a una página ya publicada, sin tocar el resto del sitio.', min: 30000, max: 70000 },
+            { name: 'Agregar sección nueva al menú (con submenús)', desc: 'Crear una entrada nueva en el menú principal que despliega su propio submenú (ej. agregar "Cursos" con 2 submenús dentro). Incluye la estructura de navegación e integración con el menú existente. Cada submenú se cotiza aparte como Página simple o Página compleja según su contenido.', min: 40000, max: 90000 },
+            { name: 'Configuración/carga de fichas de producto', desc: 'Subir productos al catálogo (foto, descripción, precio, variantes, categoría). Es carga de datos, no diseño.', min: 5000, max: 10000 },
+            { name: 'Mantención mensual', desc: 'Plan recurrente de revisión, pequeños cambios y soporte del sitio.', min: 60000, max: 150000 },
+            { name: 'Migración desde otra plataforma', desc: 'Mover un sitio existente de una plataforma a otra, recreando diseño y contenido.', min: 200000, max: 500000 },
+          ],
+        },
+        {
+          group: 'C) Aplicación',
+          items: [
+            { name: 'Creación desde cero (UI completo)', desc: 'Diseñar todas las pantallas de la app con sus estados, con un sistema visual coherente.', min: 800000, max: 2500000 },
+            { name: 'Actualización de contenido', desc: 'Cambios de textos/imágenes/datos en pantallas ya diseñadas.', min: 50000, max: 100000 },
+            { name: 'Agregar contenido a pantalla existente (solo diseño)', desc: 'Sumar un elemento o sección nueva a una pantalla ya diseñada.', min: 40000, max: 80000 },
+            { name: 'Diseño de nuevo flujo/pantalla', desc: 'Pantalla o flujo que no existía (ej. un nuevo proceso de checkout), incluye wireframe y diseño final.', min: 150000, max: 350000 },
+            { name: 'Prototipo interactivo navegable', desc: 'Conectar las pantallas con clics/transiciones para probar la app sin programarla.', min: 200000, max: 500000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '2. Editorial',
+      groups: [
+        {
+          group: 'Memoria / informe anual',
+          items: [
+            { name: 'Memoria — valor por página', desc: 'Precio unitario por cada página de una memoria (texto + imágenes + gráficos), diagramada individualmente. Sirve de base para piezas fuera de los packs cerrados.', min: 25000, max: 45000 },
+            { name: 'Pack 25 páginas', desc: 'Memoria completa de 25 páginas con precio cerrado (incluye descuento por volumen vs. cobrar cada página suelta).', min: 700000, max: 1100000 },
+            { name: 'Pack 50 páginas', desc: 'Memoria completa de 50 páginas con precio cerrado.', min: 1300000, max: 1800000 },
+            { name: 'Pack 75 páginas', desc: 'Memoria completa de 75 páginas con precio cerrado.', min: 1800000, max: 2600000 },
+            { name: 'Memoria digital con animación (extra)', desc: 'Adaptar la memoria ya diagramada a un formato digital interactivo (transiciones, scroll animado, micro-interacciones). Se suma sobre el pack o valor por página ya cotizado, no lo reemplaza.', min: 300000, max: 700000 },
+          ],
+        },
+        {
+          group: 'Branding editorial',
+          items: [
+            { name: 'Manual corporativo', desc: 'Documento que define el uso correcto de la marca: logo (versiones, área de protección, usos incorrectos), paleta, tipografía, aplicaciones (papelería, redes, señalética), tono de comunicación. Su extensión varía según el tamaño de la empresa.', min: 300000, max: 1500000 },
+          ],
+        },
+        {
+          group: 'Piezas editoriales sueltas',
+          items: [
+            { name: 'Libro/revista/catálogo/papelería/informe (por página)', desc: 'Diagramación de piezas editoriales individuales que no calzan en el sistema de packs de memoria. Se cotiza por página, con recargo según densidad de contenido (texto corrido vs. con imágenes/tablas/gráficos).', min: 25000, max: 45000 },
+            { name: 'Diseño editorial digital (newsletter/ebook/PDF interactivo)', desc: 'Piezas pensadas para pantalla, con enlaces internos, botones y formato de lectura digital. Distinto de un PDF para imprenta.', min: 80000, max: 300000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '3. Branding e identidad',
+      groups: [
+        {
+          group: 'Logo',
+          items: [
+            { name: 'Logo base (ícono + colores corporativos + PNG/JPG/editables)', desc: 'Diseño del ícono/símbolo, incluye definición de colores corporativos (paleta simple) y entrega de archivos en PNG, JPG y formatos editables (AI/EPS/SVG). Incluye 2-3 propuestas iniciales y 2 rondas de ajuste sobre la propuesta elegida.', min: 200000, max: 500000 },
+            { name: 'Propuesta adicional', desc: 'Una propuesta más, más allá de las incluidas en el logo base. Implica explorar un camino visual distinto, no una variación menor.', min: 60000, max: 120000 },
+            { name: 'Ronda de ajuste extra', desc: 'Una ronda de revisión más allá de las 2 incluidas en el logo base.', min: 40000, max: 80000 },
+            { name: 'Estrategia de marca previa', desc: 'Investigación de mercado/competencia y moodboard, para cuando el cliente no trae brief ni concepto definido. Se suma al logo base, no lo reemplaza.', min: 100000, max: 250000 },
+          ],
+        },
+        {
+          group: 'Sistema e identidad',
+          items: [
+            { name: 'Sistema visual / identidad completa', desc: 'Logo + paleta + tipografía + aplicaciones básicas (papelería, redes) como sistema coherente. No incluye el documento formal del manual de marca (ver Editorial).', min: 500000, max: 1500000 },
+            { name: 'Rebranding (sobre marca existente)', desc: 'Actualizar o renovar una marca que ya existe. No se parte de cero: se trabaja sobre la herencia visual y el reconocimiento que la marca ya tiene con su público.', min: 300000, max: 900000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '4. Publicidad y marketing',
+      groups: [
+        {
+          group: 'Piezas y campañas',
+          items: [
+            { name: 'Aviso print/digital (pieza única)', desc: 'Anuncio publicitario para un medio impreso o digital (revista, diario, banner web, red social paga), pensado para un placement específico.', min: 60000, max: 150000 },
+            { name: 'Campaña 360 (set de piezas)', desc: 'Conjunto coordinado de piezas para lanzar un mensaje en múltiples canales (impreso, digital, redes, vía pública) bajo un mismo concepto creativo. Incluye adaptar el key visual a los distintos formatos.', min: 500000, max: 1500000 },
+            { name: 'Banner / key visual', desc: 'Imagen principal que representa visualmente una campaña o promoción, usada como base para adaptar a los demás formatos.', min: 50000, max: 120000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '5. Redes sociales',
+      groups: [
+        {
+          group: 'Piezas y planes',
+          items: [
+            { name: 'Post individual', desc: 'Una pieza gráfica única para publicar en redes (imagen fija con texto/diseño), sin ser parte de un carrusel o plan mensual.', min: 25000, max: 50000 },
+            { name: 'Carrusel', desc: 'Set de varias piezas (slides) diseñadas para deslizar en un solo post, con hilo visual coherente entre ellas.', min: 40000, max: 75000 },
+            { name: 'Story/template', desc: 'Pieza vertical para historias (Instagram/Facebook), o plantilla reutilizable para contenido recurrente del cliente.', min: 18000, max: 30000 },
+            { name: 'Plan mensual (calendario completo)', desc: 'Paquete de piezas para todo un mes de contenido según calendario editorial acordado (mezcla de posts, carruseles y stories).', min: 350000, max: 900000 },
+            { name: 'Thumbnail', desc: 'Miniatura/portada para videos o contenido (YouTube, podcasts, etc.).', min: 18000, max: 30000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '6. Ilustración',
+      groups: [
+        {
+          group: 'Piezas',
+          items: [
+            { name: 'Ilustración editorial (pieza)', desc: 'Ilustración original para acompañar un texto o artículo (revista, blog, informe), con concepto visual propio.', min: 60000, max: 180000 },
+            { name: 'Ícono (set base, hasta 10 íconos)', desc: 'Conjunto de hasta 10 íconos custom con estilo visual coherente entre sí, para un sistema o proyecto específico.', min: 50000, max: 120000 },
+            { name: 'Ícono adicional (fuera del set base)', desc: 'Cada ícono extra más allá de los 10 incluidos en el set base, manteniendo el mismo estilo.', min: 5000, max: 12000 },
+            { name: 'Infografía', desc: 'Pieza que traduce datos/información en formato visual (gráficos, diagramas, jerarquía de lectura) para explicar un proceso o dataset.', min: 100000, max: 250000 },
+            { name: 'Character design', desc: 'Diseño de un personaje ilustrado (mascota, avatar, vocero visual de marca), incluyendo variaciones de pose/expresión según el alcance acordado.', min: 120000, max: 300000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '7. Packaging',
+      groups: [
+        {
+          group: 'Piezas',
+          items: [
+            { name: 'Etiqueta', desc: 'Diseño de etiqueta para producto (envase, botella, frasco), incluyendo la información técnica/legal requerida si aplica (ingredientes, tabla nutricional, etc.).', min: 60000, max: 150000 },
+            { name: 'Caja', desc: 'Diseño de packaging tipo caja/estuche. Incluye definir el dieline/troquel junto con el diseño gráfico si la estructura no viene dada.', min: 150000, max: 400000 },
+            { name: 'Display punto de venta', desc: 'Pieza de exhibición para tienda/retail (exhibidor, stand de mesa, cabecera de góndola), diseño gráfico listo para producción física.', min: 200000, max: 500000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '8. Presentaciones',
+      groups: [
+        {
+          group: 'Piezas',
+          items: [
+            { name: 'Deck corporativo (por lámina)', desc: 'Diseño de cada lámina/slide individual de una presentación corporativa (institucional, informe, capacitación), cuando se cobra por unidad en vez de por proyecto completo.', min: 25000, max: 70000 },
+            { name: 'Pitch deck completo', desc: 'Presentación completa para levantar inversión o vender un proyecto/startup, con narrativa estructurada de principio a fin (problema, solución, mercado, equipo, etc.).', min: 400000, max: 1200000 },
+            { name: 'Propuesta comercial', desc: 'Documento para ofrecer un servicio/producto a un cliente potencial, con estructura de propuesta (contexto, alcance, cotización, cierre).', min: 100000, max: 300000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '9. Señalética y ambientación',
+      groups: [
+        {
+          group: 'Piezas',
+          items: [
+            { name: 'Gráfica para espacio físico (por pieza)', desc: 'Diseño de una pieza gráfica individual para un espacio físico (letrero, vinilo de vitrina, cartel de ambientación de local), pensada para un lugar y tamaño específico.', min: 80000, max: 250000 },
+            { name: 'Stand/feria (proyecto completo)', desc: 'Diseño completo de un stand para feria o evento, con toda la gráfica de ambientación coordinada (paneles, mobiliario gráfico, señalética del stand).', min: 500000, max: 1500000 },
+          ],
+        },
+      ],
+    },
+    {
+      category: '10. Producción y arte final',
+      groups: [
+        {
+          group: 'Piezas',
+          items: [
+            { name: 'Ajuste de archivo para imprenta (por pieza)', desc: 'Preparar un archivo ya diseñado para que salga bien en imprenta (sangrado, resolución, modo de color CMYK, marcas de corte), sin rediseñar el contenido.', min: 20000, max: 50000 },
+            { name: 'Maquetación para producción industrial (por pieza)', desc: 'Adaptar un diseño a las medidas y especificaciones técnicas de un proceso de producción industrial (ej. impresión de gran formato, materiales rígidos).', min: 30000, max: 80000 },
+          ],
+        },
+      ],
+    },
+  ];
+
+  const FLAT_ITEMS = [];
+  CATALOG.forEach(cat => cat.groups.forEach(g => g.items.forEach(it => {
+    FLAT_ITEMS.push({ id: `${cat.category}__${g.group}__${it.name}`, category: cat.category, group: g.group, ...it });
+  })));
+
+  function currency(n) {
+    if (isNaN(n)) n = 0;
+    return '$' + Math.round(n).toLocaleString('es-CL');
+  }
+
+  function buildCatalogSelect(select) {
+    select.innerHTML = '<option value="">— Ítem libre —</option>';
+    let lastGroup = null;
+    let optgroupEl = null;
+    FLAT_ITEMS.forEach(it => {
+      const groupKey = it.category + ' · ' + it.group;
+      if (groupKey !== lastGroup) {
+        optgroupEl = document.createElement('optgroup');
+        optgroupEl.label = groupKey;
+        select.appendChild(optgroupEl);
+        lastGroup = groupKey;
+      }
+      const opt = document.createElement('option');
+      opt.value = it.id;
+      opt.textContent = it.name;
+      optgroupEl.appendChild(opt);
+    });
+  }
+
+  function buildServiceGuide() {
+    const container = document.getElementById('serviceGuideContent');
+    let html = '';
+    CATALOG.forEach(cat => {
+      html += `<h4 class="sg-cat">${cat.category}</h4>`;
+      cat.groups.forEach(g => {
+        html += `<div class="sg-group">${g.group}</div><ul class="sg-list">`;
+        g.items.forEach(it => {
+          html += `<li><strong>${it.name}:</strong> ${it.desc} <span class="sg-range">(${currency(it.min)}–${currency(it.max)})</span></li>`;
+        });
+        html += '</ul>';
+      });
+    });
+    container.innerHTML = html;
+  }
+
+  function parseNum(v) {
+    const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function makeRow(desc, qty, price, catalogId) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="col-catalog"><select class="f-catalog"></select></td>
+      <td>
+        <input class="f-desc" type="text" value="${desc || ''}" placeholder="Ej: Diseño de logotipo">
+        <div class="item-note"></div>
+      </td>
+      <td class="col-qty"><input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}"></td>
+      <td class="col-price"><input class="f-price" type="number" min="0" step="1" value="${price ?? 0}"></td>
+      <td class="col-total f-total">${currency((qty ?? 1) * (price ?? 0))}</td>
+      <td class="col-del"><button class="del-btn" title="Eliminar ítem">✕</button></td>
+    `;
+    const select = tr.querySelector('.f-catalog');
+    buildCatalogSelect(select);
+    if (catalogId) select.value = catalogId;
+    applyCatalogNote(tr, catalogId);
+
+    select.addEventListener('change', () => {
+      const it = FLAT_ITEMS.find(f => f.id === select.value);
+      if (it) {
+        tr.querySelector('.f-desc').value = it.name;
+        tr.querySelector('.f-price').value = it.min;
+      }
+      applyCatalogNote(tr, select.value);
+      recalc();
+    });
+    tr.querySelector('.f-qty').addEventListener('input', recalc);
+    tr.querySelector('.f-price').addEventListener('input', recalc);
+    tr.querySelector('.f-desc').addEventListener('input', save);
+    tr.querySelector('.del-btn').addEventListener('click', () => { tr.remove(); recalc(); });
+    return tr;
+  }
+
+  function applyCatalogNote(tr, catalogId) {
+    const noteEl = tr.querySelector('.item-note');
+    const it = FLAT_ITEMS.find(f => f.id === catalogId);
+    if (it) {
+      noteEl.textContent = `${it.desc} Rango sugerido: ${currency(it.min)}–${currency(it.max)}.`;
+      noteEl.classList.add('visible');
+    } else {
+      noteEl.textContent = '';
+      noteEl.classList.remove('visible');
+    }
+  }
+
+  function recalc() {
+    let subtotal = 0;
+    itemsBody.querySelectorAll('tr').forEach(tr => {
+      const qty = parseNum(tr.querySelector('.f-qty').value);
+      const price = parseNum(tr.querySelector('.f-price').value);
+      const total = qty * price;
+      tr.querySelector('.f-total').textContent = currency(total);
+      subtotal += total;
+    });
+    const isExenta = document.getElementById('docType').value === 'exenta';
+    document.getElementById('ivaRow').style.display = isExenta ? 'none' : '';
+    document.getElementById('exemptNoteWrap').classList.toggle('visible', isExenta);
+    document.getElementById('subtotalLabel').textContent = isExenta ? 'Monto exento' : 'Subtotal';
+
+    const ivaRate = isExenta ? 0 : parseNum(document.getElementById('ivaRate').value) / 100;
+    const iva = subtotal * ivaRate;
+    document.getElementById('subtotalOut').textContent = currency(subtotal);
+    document.getElementById('ivaOut').textContent = currency(iva);
+    document.getElementById('totalOut').textContent = currency(subtotal + iva);
+    save();
+  }
+
+  function save() {
+    const data = {
+      brandName: document.getElementById('brandName').value,
+      brandSub: document.getElementById('brandSub').value,
+      client: document.getElementById('client').value,
+      docNumber: document.getElementById('docNumber').value,
+      docDate: document.getElementById('docDate').value,
+      validUntil: document.getElementById('validUntil').value,
+      ivaRate: document.getElementById('ivaRate').value,
+      docType: document.getElementById('docType').value,
+      exemptNote: document.getElementById('exemptNote').value,
+      notes: document.getElementById('notes').value,
+      items: Array.from(itemsBody.querySelectorAll('tr')).map(tr => ({
+        desc: tr.querySelector('.f-desc').value,
+        qty: tr.querySelector('.f-qty').value,
+        price: tr.querySelector('.f-price').value,
+        catalogId: tr.querySelector('.f-catalog').value,
+      })),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function load() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      itemsBody.appendChild(makeRow('', 1, 0));
+      document.getElementById('docDate').valueAsDate = new Date();
+      document.getElementById('exemptNote').value = 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
+      return;
+    }
+    try {
+      const data = JSON.parse(raw);
+      document.getElementById('brandName').value = data.brandName ?? '';
+      document.getElementById('brandSub').value = data.brandSub ?? '';
+      document.getElementById('client').value = data.client ?? '';
+      document.getElementById('docNumber').value = data.docNumber ?? '';
+      document.getElementById('docDate').value = data.docDate ?? '';
+      document.getElementById('validUntil').value = data.validUntil ?? '';
+      document.getElementById('ivaRate').value = data.ivaRate ?? '19';
+      document.getElementById('docType').value = data.docType ?? 'afecta';
+      document.getElementById('exemptNote').value = data.exemptNote ?? 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
+      document.getElementById('notes').value = data.notes ?? '';
+      (data.items && data.items.length ? data.items : [{ desc: '', qty: 1, price: 0 }])
+        .forEach(it => itemsBody.appendChild(makeRow(it.desc, it.qty, it.price, it.catalogId)));
+    } catch (e) {
+      itemsBody.appendChild(makeRow('', 1, 0));
+    }
+  }
+
+  document.getElementById('addRow').addEventListener('click', () => {
+    itemsBody.appendChild(makeRow('', 1, 0));
+    recalc();
+  });
+
+  document.getElementById('clearAll').addEventListener('click', () => {
+    if (!confirm('¿Borrar todos los datos de esta cotización?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  document.getElementById('docType').addEventListener('change', recalc);
+  document.getElementById('exemptNote').addEventListener('input', save);
+
+  document.querySelectorAll('.meta-grid input, #brandName, #brandSub, #notes, #ivaRate')
+    .forEach(el => el.addEventListener('input', () => { save(); if (el.id === 'ivaRate') recalc(); }));
+
+  buildServiceGuide();
+  load();
+  recalc();
+})();
+</script>
+</body>
+</html>
