@@ -144,12 +144,16 @@
   .col-del { width: 32px; text-align: center; }
   .col-catalog select {
     width: 100%;
+    max-width: 100%;
     border: none;
     background: transparent;
     font-family: inherit;
     font-size: 12px;
     color: var(--muted);
     padding: 4px 2px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
   }
   .col-catalog select:focus { outline: none; background: var(--accent-soft); }
   .sg-range { color: var(--accent); white-space: nowrap; }
@@ -363,8 +367,8 @@
     <table class="items">
       <thead>
         <tr>
-          <th class="col-catalog" style="width:20%">Servicio</th>
-          <th style="width:30%">Descripción</th>
+          <th class="col-catalog" style="width:27%">Servicio</th>
+          <th style="width:23%">Descripción</th>
           <th class="col-qty" style="width:12%">Cant.</th>
           <th class="col-price" style="width:16%">Precio unit.</th>
           <th style="width:16%">Subtotal</th>
@@ -679,6 +683,11 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
+  function updateSelectTitle(select) {
+    const it = FLAT_ITEMS.find(f => f.id === select.value);
+    select.title = it ? it.name : '';
+  }
+
   function makeRow(desc, qty, price, catalogId) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -694,12 +703,14 @@
     const select = tr.querySelector('.f-catalog');
     buildCatalogSelect(select);
     if (catalogId) select.value = catalogId;
+    updateSelectTitle(select);
 
     select.addEventListener('change', () => {
       const it = FLAT_ITEMS.find(f => f.id === select.value);
       if (it) {
         tr.querySelector('.f-price').value = it.min;
       }
+      updateSelectTitle(select);
       recalc();
     });
     const descEl = tr.querySelector('.f-desc');
