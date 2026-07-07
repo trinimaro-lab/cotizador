@@ -767,10 +767,11 @@
     }
     try {
       const data = JSON.parse(raw);
-      document.getElementById('brandName').value = data.brandName ?? '';
-      document.getElementById('brandRole').value = data.brandRole ?? '';
-      document.getElementById('brandEmail').value = data.brandEmail ?? '';
-      document.getElementById('brandPhone').value = data.brandPhone ?? '';
+      const isLegacyBrand = data.brandRole === undefined && typeof data.brandName === 'string' && data.brandName.includes('—');
+      document.getElementById('brandName').value = isLegacyBrand ? 'Trinidad Marín Roca' : (data.brandName ?? '');
+      document.getElementById('brandRole').value = isLegacyBrand ? 'Diseño Gráfico' : (data.brandRole ?? '');
+      document.getElementById('brandEmail').value = isLegacyBrand ? 'trinimaro@gmail.com' : (data.brandEmail ?? '');
+      document.getElementById('brandPhone').value = isLegacyBrand ? '+56 9 9240 5072' : (data.brandPhone ?? '');
       document.getElementById('client').value = data.client ?? '';
       document.getElementById('docNumber').value = data.docNumber ?? '';
       document.getElementById('docDate').value = data.docDate ?? '';
