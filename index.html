@@ -30,43 +30,48 @@
   }
   .brand-row {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    justify-content: flex-start;
+    align-items: flex-end;
     gap: 24px;
     border-bottom: 2px solid var(--ink);
     padding-bottom: 24px;
     margin-bottom: 24px;
   }
   .brand-logo {
-    width: 64px;
-    height: 64px;
+    width: 250px;
+    height: 250px;
     object-fit: contain;
     border-radius: 10px;
     flex-shrink: 0;
+  }
+  .brand-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .brand-row input {
     border: none;
     background: transparent;
     font-family: inherit;
     color: inherit;
+    text-align: left;
   }
   .brand-name {
-    font-size: 22px;
+    font-size: 32px;
     font-weight: 700;
     width: 100%;
   }
-  .brand-sub {
+  .brand-role {
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .brand-email, .brand-phone {
     font-size: 13px;
     color: var(--muted);
     width: 100%;
     margin-top: 4px;
-  }
-  .doc-title {
-    text-align: right;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: var(--accent);
   }
   .meta-grid {
     display: grid;
@@ -323,11 +328,12 @@
   <div class="sheet">
     <div class="brand-row">
       <img class="brand-logo" src="logo.png" alt="Logo">
-      <div style="flex:1">
-        <input class="brand-name" id="brandName" value="Trinidad Marín Roca — Diseño Gráfico" />
-        <input class="brand-sub" id="brandSub" value="trinimaro@gmail.com · +56 9 9240 5072" />
+      <div class="brand-info">
+        <input class="brand-name" id="brandName" value="Trinidad Marín Roca" />
+        <input class="brand-role" id="brandRole" value="Diseño Gráfico" />
+        <input class="brand-email" id="brandEmail" value="trinimaro@gmail.com" />
+        <input class="brand-phone" id="brandPhone" value="+56 9 9240 5072" />
       </div>
-      <div class="doc-title">COTIZACIÓN</div>
     </div>
 
     <div class="meta-grid">
@@ -730,7 +736,9 @@
   function save() {
     const data = {
       brandName: document.getElementById('brandName').value,
-      brandSub: document.getElementById('brandSub').value,
+      brandRole: document.getElementById('brandRole').value,
+      brandEmail: document.getElementById('brandEmail').value,
+      brandPhone: document.getElementById('brandPhone').value,
       client: document.getElementById('client').value,
       docNumber: document.getElementById('docNumber').value,
       docDate: document.getElementById('docDate').value,
@@ -760,7 +768,9 @@
     try {
       const data = JSON.parse(raw);
       document.getElementById('brandName').value = data.brandName ?? '';
-      document.getElementById('brandSub').value = data.brandSub ?? '';
+      document.getElementById('brandRole').value = data.brandRole ?? '';
+      document.getElementById('brandEmail').value = data.brandEmail ?? '';
+      document.getElementById('brandPhone').value = data.brandPhone ?? '';
       document.getElementById('client').value = data.client ?? '';
       document.getElementById('docNumber').value = data.docNumber ?? '';
       document.getElementById('docDate').value = data.docDate ?? '';
@@ -792,7 +802,7 @@
   document.getElementById('docType').addEventListener('change', recalc);
   document.getElementById('exemptNote').addEventListener('input', save);
 
-  document.querySelectorAll('.meta-grid input, #brandName, #brandSub, #notes, #ivaRate')
+  document.querySelectorAll('.meta-grid input, #brandName, #brandRole, #brandEmail, #brandPhone, #notes, #ivaRate')
     .forEach(el => el.addEventListener('input', () => { save(); if (el.id === 'ivaRate') recalc(); }));
 
   buildServiceGuide();
