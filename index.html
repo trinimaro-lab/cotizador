@@ -139,14 +139,6 @@
     padding: 4px 2px;
   }
   .col-catalog select:focus { outline: none; background: var(--accent-soft); }
-  .item-note {
-    display: none;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 3px;
-    line-height: 1.4;
-  }
-  .item-note.visible { display: block; }
   .sg-range { color: var(--accent); white-space: nowrap; }
   .del-btn {
     border: none;
@@ -313,7 +305,7 @@
   @media print {
     body { background: #fff; padding: 0; }
     .sheet { box-shadow: none; padding: 20px; max-width: 100%; }
-    .actions, .add-row, .col-del, .col-catalog, .item-note, .service-guide, .doc-type-row { display: none !important; }
+    .actions, .add-row, .col-del, .col-catalog, .service-guide, .doc-type-row { display: none !important; }
     .exempt-note input { border: none !important; text-align: right; }
     input, textarea {
       border: none !important;
@@ -670,8 +662,7 @@
     tr.innerHTML = `
       <td class="col-catalog"><select class="f-catalog"></select></td>
       <td>
-        <input class="f-desc" type="text" value="${desc || ''}" placeholder="Ej: Diseño de logotipo">
-        <div class="item-note"></div>
+        <input class="f-desc" type="text" value="${desc || ''}" placeholder="Escribe una descripción">
       </td>
       <td class="col-qty"><input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}"></td>
       <td class="col-price"><input class="f-price" type="number" min="0" step="1" value="${price ?? 0}"></td>
@@ -681,15 +672,12 @@
     const select = tr.querySelector('.f-catalog');
     buildCatalogSelect(select);
     if (catalogId) select.value = catalogId;
-    applyCatalogNote(tr, catalogId);
 
     select.addEventListener('change', () => {
       const it = FLAT_ITEMS.find(f => f.id === select.value);
       if (it) {
-        tr.querySelector('.f-desc').value = it.name;
         tr.querySelector('.f-price').value = it.min;
       }
-      applyCatalogNote(tr, select.value);
       recalc();
     });
     tr.querySelector('.f-qty').addEventListener('input', recalc);
@@ -697,18 +685,6 @@
     tr.querySelector('.f-desc').addEventListener('input', save);
     tr.querySelector('.del-btn').addEventListener('click', () => { tr.remove(); recalc(); });
     return tr;
-  }
-
-  function applyCatalogNote(tr, catalogId) {
-    const noteEl = tr.querySelector('.item-note');
-    const it = FLAT_ITEMS.find(f => f.id === catalogId);
-    if (it) {
-      noteEl.textContent = `${it.desc} Rango sugerido: ${currency(it.min)}–${currency(it.max)}.`;
-      noteEl.classList.add('visible');
-    } else {
-      noteEl.textContent = '';
-      noteEl.classList.remove('visible');
-    }
   }
 
   function recalc() {
