@@ -1,4 +1,3 @@
-<!-- deploy test: auto-publish check -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,6 +36,13 @@
     border-bottom: 2px solid var(--ink);
     padding-bottom: 24px;
     margin-bottom: 24px;
+  }
+  .brand-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
   .brand-row input {
     border: none;
@@ -316,6 +322,7 @@
 <body>
   <div class="sheet">
     <div class="brand-row">
+      <img class="brand-logo" src="logo.png" alt="Logo">
       <div style="flex:1">
         <input class="brand-name" id="brandName" value="Trinidad Marín Roca — Diseño Gráfico" />
         <input class="brand-sub" id="brandSub" value="trinimaro@gmail.com · +56 9 9240 5072" />
