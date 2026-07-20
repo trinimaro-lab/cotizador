@@ -811,7 +811,15 @@
     location.reload();
   });
 
-  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('printBtn').addEventListener('click', () => {
+    const safe = s => (s || '').trim().replace(/[\\/:*?"<>|]/g, '-');
+    const client = safe(document.getElementById('client').value) || 'Cliente';
+    const docNumber = safe(document.getElementById('docNumber').value) || 'Cotizacion';
+    const originalTitle = document.title;
+    document.title = `Cotizacion ${docNumber} - ${client}`;
+    window.addEventListener('afterprint', () => { document.title = originalTitle; }, { once: true });
+    window.print();
+  });
 
   document.getElementById('docType').addEventListener('change', recalc);
   document.getElementById('exemptNote').addEventListener('input', save);
