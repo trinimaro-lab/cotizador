@@ -307,15 +307,10 @@
     color: var(--muted);
     margin-bottom: 6px;
   }
-  .payment-details textarea {
-    width: 100%;
-    min-height: 70px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 10px;
-    font-family: inherit;
+  .payment-details-text {
     font-size: 13px;
-    resize: vertical;
+    line-height: 1.6;
+    white-space: pre-line;
   }
   .notes textarea {
     width: 100%;
@@ -458,12 +453,12 @@
 
     <div class="payment-details">
       <label>Detalles de pago</label>
-      <textarea id="paymentDetails">DE LA CUESTA Y MARIN LIMITADA
+      <div class="payment-details-text">DE LA CUESTA Y MARIN LIMITADA
 RUT: 78452809K
 Mercado Pago
 Cuenta Vista
 Número de cuenta: 1072917474
-delacuestamarin@gmail.com</textarea>
+delacuestamarin@gmail.com</div>
     </div>
 
     <div class="actions">
@@ -476,12 +471,6 @@ delacuestamarin@gmail.com</textarea>
 (function () {
   const itemsBody = document.getElementById('itemsBody');
   const STORAGE_KEY = 'cotizador-diseno-data';
-  const DEFAULT_PAYMENT_DETAILS = `DE LA CUESTA Y MARIN LIMITADA
-RUT: 78452809K
-Mercado Pago
-Cuenta Vista
-Número de cuenta: 1072917474
-delacuestamarin@gmail.com`;
 
   const CATALOG = [
     {
@@ -820,7 +809,6 @@ delacuestamarin@gmail.com`;
       discountType: document.getElementById('discountType').value,
       docType: document.getElementById('docType').value,
       exemptNote: document.getElementById('exemptNote').value,
-      paymentDetails: document.getElementById('paymentDetails').value,
       notes: document.getElementById('notes').value,
       items: Array.from(itemsBody.querySelectorAll('tr')).map(tr => ({
         desc: tr.querySelector('.f-desc').value,
@@ -856,7 +844,6 @@ delacuestamarin@gmail.com`;
       document.getElementById('discountType').value = data.discountType ?? 'percent';
       document.getElementById('docType').value = data.docType ?? 'afecta';
       document.getElementById('exemptNote').value = data.exemptNote ?? 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
-      document.getElementById('paymentDetails').value = data.paymentDetails ?? DEFAULT_PAYMENT_DETAILS;
       document.getElementById('notes').value = data.notes ?? '';
       (data.items && data.items.length ? data.items : [{ desc: '', qty: 1, price: 0 }])
         .forEach(it => itemsBody.appendChild(makeRow(it.desc, it.qty, it.price, it.catalogId)));
@@ -890,7 +877,6 @@ delacuestamarin@gmail.com`;
   document.getElementById('exemptNote').addEventListener('input', save);
   document.getElementById('discountValue').addEventListener('input', recalc);
   document.getElementById('discountType').addEventListener('change', recalc);
-  document.getElementById('paymentDetails').addEventListener('input', save);
 
   document.querySelectorAll('.meta-grid input, #brandName, #brandRole, #brandEmail, #brandPhone, #notes, #ivaRate')
     .forEach(el => el.addEventListener('input', () => { save(); if (el.id === 'ivaRate') recalc(); }));
