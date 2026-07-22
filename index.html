@@ -97,6 +97,12 @@
     background: transparent;
   }
   .meta-field input:focus { outline: none; border-color: var(--accent); }
+  .meta-static {
+    width: 100%;
+    padding: 4px 2px;
+    font-size: 14px;
+    border-bottom: 1px solid transparent;
+  }
 
   table.items {
     width: 100%;
@@ -383,7 +389,7 @@
       </div>
       <div class="meta-field">
         <label>Fecha</label>
-        <input id="docDate" type="date" />
+        <div class="meta-static" id="docDate"></div>
       </div>
       <div class="meta-field">
         <label>Válida hasta</label>
@@ -471,6 +477,21 @@ delacuestamarin@gmail.com</div>
 (function () {
   const itemsBody = document.getElementById('itemsBody');
   const STORAGE_KEY = 'cotizador-diseno-data';
+  const LAST_NUMBER_KEY = 'cotizador-last-docnumber';
+
+  function setTodayDate() {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    document.getElementById('docDate').textContent = `${dd}-${mm}-${yyyy}`;
+  }
+
+  function nextDocNumber() {
+    const last = parseInt(localStorage.getItem(LAST_NUMBER_KEY), 10);
+    const next = isNaN(last) ? 1 : last + 1;
+    return String(next).padStart(3, '0');
+  }
 
   const CATALOG = [
     {
@@ -802,7 +823,6 @@ delacuestamarin@gmail.com</div>
       brandPhone: document.getElementById('brandPhone').value,
       client: document.getElementById('client').value,
       docNumber: document.getElementById('docNumber').value,
-      docDate: document.getElementById('docDate').value,
       validUntil: document.getElementById('validUntil').value,
       ivaRate: document.getElementById('ivaRate').value,
       discountValue: document.getElementById('discountValue').value,
@@ -818,13 +838,18 @@ delacuestamarin@gmail.com</div>
       })),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const parsedNumber = parseInt(data.docNumber, 10);
+    if (!isNaN(parsedNumber)) localStorage.setItem(LAST_NUMBER_KEY, String(parsedNumber));
   }
 
   function load() {
+    setTodayDate();
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       itemsBody.appendChild(makeRow('', 1, 0));
-      document.getElementById('docDate').valueAsDate = new Date();
+      const initialNumber = nextDocNumber();
+      document.getElementById('docNumber').value = initialNumber;
+      localStorage.setItem(LAST_NUMBER_KEY, String(parseInt(initialNumber, 10)));
       document.getElementById('exemptNote').value = 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
       return;
     }
@@ -837,7 +862,6 @@ delacuestamarin@gmail.com</div>
       document.getElementById('brandPhone').value = isLegacyBrand ? '+56 9 9240 5072' : (data.brandPhone ?? '');
       document.getElementById('client').value = data.client ?? '';
       document.getElementById('docNumber').value = data.docNumber ?? '';
-      document.getElementById('docDate').value = data.docDate ?? '';
       document.getElementById('validUntil').value = data.validUntil ?? '';
       document.getElementById('ivaRate').value = data.ivaRate ?? '19';
       document.getElementById('discountValue').value = data.discountValue ?? '0';
