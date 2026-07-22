@@ -278,17 +278,44 @@
     font-size: 13px;
     background: transparent;
   }
+  .discount-value {
+    width: 40px;
+    border: none;
+    border-bottom: 1px dotted var(--line);
+    text-align: right;
+    font-family: inherit;
+    font-size: 13px;
+    background: transparent;
+  }
+  .discount-type {
+    border: none;
+    border-bottom: 1px dotted var(--line);
+    font-family: inherit;
+    font-size: 13px;
+    background: transparent;
+    margin-left: 2px;
+  }
 
-  .notes {
+  .notes, .payment-details {
     margin-bottom: 32px;
   }
-  .notes label {
+  .notes label, .payment-details label {
     display: block;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
     margin-bottom: 6px;
+  }
+  .payment-details textarea {
+    width: 100%;
+    min-height: 70px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
   }
   .notes textarea {
     width: 100%;
@@ -324,9 +351,14 @@
     .sheet { box-shadow: none; padding: 20px; max-width: 100%; }
     .actions, .add-row, .col-del, .col-catalog, .service-guide, .doc-type-row { display: none !important; }
     .exempt-note input { border: none !important; text-align: right; }
-    input, textarea {
+    input, textarea, select {
       border: none !important;
       background: transparent !important;
+    }
+    .discount-type {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 0;
     }
     .meta-field input { border-bottom: none; }
     table.items td { border-bottom: 1px solid #ccc; }
@@ -399,6 +431,10 @@
           <td id="subtotalLabel">Subtotal</td>
           <td id="subtotalOut">$0</td>
         </tr>
+        <tr>
+          <td>Descuento (<input class="discount-value" id="discountValue" type="number" min="0" step="1" value="0" /><select id="discountType" class="discount-type"><option value="percent">%</option><option value="fixed">$</option></select>)</td>
+          <td id="discountOut">-$0</td>
+        </tr>
         <tr id="ivaRow">
           <td>IVA (<input class="iva-rate" id="ivaRate" value="19" />%)</td>
           <td id="ivaOut">$0</td>
@@ -413,6 +449,16 @@
     <div class="exempt-note" id="exemptNoteWrap">
       <label>Referencia de exención (se imprime)</label>
       <input id="exemptNote" type="text" placeholder="Ej: Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825">
+    </div>
+
+    <div class="payment-details">
+      <label>Detalles de pago</label>
+      <textarea id="paymentDetails">DE LA CUESTA Y MARIN LIMITADA
+RUT: 78452809K
+Mercado Pago
+Cuenta Vista
+Número de cuenta: 1072917474
+delacuestamarin@gmail.com</textarea>
     </div>
 
     <div class="notes">
@@ -430,6 +476,12 @@
 (function () {
   const itemsBody = document.getElementById('itemsBody');
   const STORAGE_KEY = 'cotizador-diseno-data';
+  const DEFAULT_PAYMENT_DETAILS = `DE LA CUESTA Y MARIN LIMITADA
+RUT: 78452809K
+Mercado Pago
+Cuenta Vista
+Número de cuenta: 1072917474
+delacuestamarin@gmail.com`;
 
   const CATALOG = [
     {
@@ -738,11 +790,18 @@
     document.getElementById('exemptNoteWrap').classList.toggle('visible', isExenta);
     document.getElementById('subtotalLabel').textContent = isExenta ? 'Monto exento' : 'Subtotal';
 
+    const discountValue = parseNum(document.getElementById('discountValue').value);
+    const discountType = document.getElementById('discountType').value;
+    let discountAmount = discountType === 'percent' ? subtotal * discountValue / 100 : discountValue;
+    discountAmount = Math.min(Math.max(discountAmount, 0), subtotal);
+    const netAfterDiscount = subtotal - discountAmount;
+
     const ivaRate = isExenta ? 0 : parseNum(document.getElementById('ivaRate').value) / 100;
-    const iva = subtotal * ivaRate;
+    const iva = netAfterDiscount * ivaRate;
     document.getElementById('subtotalOut').textContent = currency(subtotal);
+    document.getElementById('discountOut').textContent = '-' + currency(discountAmount);
     document.getElementById('ivaOut').textContent = currency(iva);
-    document.getElementById('totalOut').textContent = currency(subtotal + iva);
+    document.getElementById('totalOut').textContent = currency(netAfterDiscount + iva);
     save();
   }
 
@@ -757,8 +816,11 @@
       docDate: document.getElementById('docDate').value,
       validUntil: document.getElementById('validUntil').value,
       ivaRate: document.getElementById('ivaRate').value,
+      discountValue: document.getElementById('discountValue').value,
+      discountType: document.getElementById('discountType').value,
       docType: document.getElementById('docType').value,
       exemptNote: document.getElementById('exemptNote').value,
+      paymentDetails: document.getElementById('paymentDetails').value,
       notes: document.getElementById('notes').value,
       items: Array.from(itemsBody.querySelectorAll('tr')).map(tr => ({
         desc: tr.querySelector('.f-desc').value,
@@ -790,8 +852,11 @@
       document.getElementById('docDate').value = data.docDate ?? '';
       document.getElementById('validUntil').value = data.validUntil ?? '';
       document.getElementById('ivaRate').value = data.ivaRate ?? '19';
+      document.getElementById('discountValue').value = data.discountValue ?? '0';
+      document.getElementById('discountType').value = data.discountType ?? 'percent';
       document.getElementById('docType').value = data.docType ?? 'afecta';
       document.getElementById('exemptNote').value = data.exemptNote ?? 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
+      document.getElementById('paymentDetails').value = data.paymentDetails ?? DEFAULT_PAYMENT_DETAILS;
       document.getElementById('notes').value = data.notes ?? '';
       (data.items && data.items.length ? data.items : [{ desc: '', qty: 1, price: 0 }])
         .forEach(it => itemsBody.appendChild(makeRow(it.desc, it.qty, it.price, it.catalogId)));
@@ -823,6 +888,9 @@
 
   document.getElementById('docType').addEventListener('change', recalc);
   document.getElementById('exemptNote').addEventListener('input', save);
+  document.getElementById('discountValue').addEventListener('input', recalc);
+  document.getElementById('discountType').addEventListener('change', recalc);
+  document.getElementById('paymentDetails').addEventListener('input', save);
 
   document.querySelectorAll('.meta-grid input, #brandName, #brandRole, #brandEmail, #brandPhone, #notes, #ivaRate')
     .forEach(el => el.addEventListener('input', () => { save(); if (el.id === 'ivaRate') recalc(); }));
