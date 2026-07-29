@@ -423,6 +423,7 @@
     .sheet { box-shadow: none; padding: 20px; max-width: 100%; }
     .actions, .add-row, .col-del, .col-catalog, .service-guide, .doc-type-row, .history-panel { display: none !important; }
     .exempt-note input { border: none !important; text-align: right; }
+    input::placeholder, textarea::placeholder { color: transparent !important; }
     input, textarea, select {
       border: none !important;
       background: transparent !important;
@@ -1099,7 +1100,22 @@ delacuestamarin@gmail.com</div>
     const docNumber = safe(document.getElementById('docNumber').value) || 'Cotizacion';
     const originalTitle = document.title;
     document.title = `Cotizacion ${docNumber} - ${client}`;
-    window.addEventListener('afterprint', () => { document.title = originalTitle; }, { once: true });
+
+    const restoreFns = [];
+    itemsBody.querySelectorAll('tr').forEach(tr => {
+      const descEl = tr.querySelector('.f-desc');
+      const serviceName = tr.querySelector('.f-catalog-search').value.trim();
+      if (!descEl.value.trim() && serviceName) {
+        descEl.value = serviceName;
+        autoGrow(descEl);
+        restoreFns.push(() => { descEl.value = ''; autoGrow(descEl); });
+      }
+    });
+
+    window.addEventListener('afterprint', () => {
+      document.title = originalTitle;
+      restoreFns.forEach(fn => fn());
+    }, { once: true });
     window.print();
   });
 
