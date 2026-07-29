@@ -219,6 +219,46 @@
   }
   .service-guide ul.sg-list li { margin-bottom: 6px; }
 
+  .history-panel {
+    margin: 0 0 28px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 16px;
+    background: #fafbfa;
+  }
+  .history-panel summary {
+    cursor: pointer;
+    padding: 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .history-info strong { font-size: 13px; }
+  .history-meta { font-size: 12px; color: var(--muted); }
+  .history-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .history-actions button {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .history-open:hover { border-color: var(--accent); color: var(--accent); }
+  .history-delete:hover { border-color: #b3413b; color: #b3413b; }
+  .history-empty { font-size: 13px; color: var(--muted); padding: 12px 0; }
+
   .doc-type-row {
     display: flex;
     justify-content: flex-end;
@@ -350,7 +390,7 @@
   @media print {
     body { background: #fff; padding: 0; }
     .sheet { box-shadow: none; padding: 20px; max-width: 100%; }
-    .actions, .add-row, .col-del, .col-catalog, .service-guide, .doc-type-row { display: none !important; }
+    .actions, .add-row, .col-del, .col-catalog, .service-guide, .doc-type-row, .history-panel { display: none !important; }
     .exempt-note input { border: none !important; text-align: right; }
     input, textarea, select {
       border: none !important;
@@ -396,6 +436,11 @@
         <input id="validUntil" type="date" />
       </div>
     </div>
+
+    <details class="history-panel" id="historyPanel">
+      <summary>💾 Cotizaciones guardadas (no se imprime)</summary>
+      <div id="historyListContent"></div>
+    </details>
 
     <table class="items">
       <thead>
@@ -469,6 +514,7 @@ delacuestamarin@gmail.com</div>
 
     <div class="actions">
       <button class="btn btn-ghost" id="clearAll">Limpiar todo</button>
+      <button class="btn btn-ghost" id="saveHistoryBtn">Guardar en historial</button>
       <button class="btn btn-primary" id="printBtn">Imprimir / Guardar PDF</button>
     </div>
   </div>
@@ -478,6 +524,7 @@ delacuestamarin@gmail.com</div>
   const itemsBody = document.getElementById('itemsBody');
   const STORAGE_KEY = 'cotizador-diseno-data';
   const LAST_NUMBER_KEY = 'cotizador-last-docnumber';
+  const HISTORY_KEY = 'cotizador-history';
 
   function setTodayDate() {
     const d = new Date();
@@ -815,8 +862,8 @@ delacuestamarin@gmail.com</div>
     save();
   }
 
-  function save() {
-    const data = {
+  function buildDataSnapshot() {
+    return {
       brandName: document.getElementById('brandName').value,
       brandRole: document.getElementById('brandRole').value,
       brandEmail: document.getElementById('brandEmail').value,
@@ -837,9 +884,33 @@ delacuestamarin@gmail.com</div>
         catalogId: tr.querySelector('.f-catalog').value,
       })),
     };
+  }
+
+  function save() {
+    const data = buildDataSnapshot();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     const parsedNumber = parseInt(data.docNumber, 10);
     if (!isNaN(parsedNumber)) localStorage.setItem(LAST_NUMBER_KEY, String(parsedNumber));
+  }
+
+  function applyData(data) {
+    const isLegacyBrand = data.brandRole === undefined && typeof data.brandName === 'string' && data.brandName.includes('—');
+    document.getElementById('brandName').value = isLegacyBrand ? 'Trinidad Marín Roca' : (data.brandName ?? '');
+    document.getElementById('brandRole').value = isLegacyBrand ? 'Diseño Gráfico' : (data.brandRole ?? '');
+    document.getElementById('brandEmail').value = isLegacyBrand ? 'trinimaro@gmail.com' : (data.brandEmail ?? '');
+    document.getElementById('brandPhone').value = isLegacyBrand ? '+56 9 9240 5072' : (data.brandPhone ?? '');
+    document.getElementById('client').value = data.client ?? '';
+    document.getElementById('docNumber').value = data.docNumber ?? '';
+    document.getElementById('validUntil').value = data.validUntil ?? '';
+    document.getElementById('ivaRate').value = data.ivaRate ?? '19';
+    document.getElementById('discountValue').value = data.discountValue ?? '0';
+    document.getElementById('discountType').value = data.discountType ?? 'percent';
+    document.getElementById('docType').value = data.docType ?? 'afecta';
+    document.getElementById('exemptNote').value = data.exemptNote ?? 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
+    document.getElementById('notes').value = data.notes ?? '';
+    itemsBody.innerHTML = '';
+    (data.items && data.items.length ? data.items : [{ desc: '', qty: 1, price: 0 }])
+      .forEach(it => itemsBody.appendChild(makeRow(it.desc, it.qty, it.price, it.catalogId)));
   }
 
   function load() {
@@ -854,26 +925,81 @@ delacuestamarin@gmail.com</div>
       return;
     }
     try {
-      const data = JSON.parse(raw);
-      const isLegacyBrand = data.brandRole === undefined && typeof data.brandName === 'string' && data.brandName.includes('—');
-      document.getElementById('brandName').value = isLegacyBrand ? 'Trinidad Marín Roca' : (data.brandName ?? '');
-      document.getElementById('brandRole').value = isLegacyBrand ? 'Diseño Gráfico' : (data.brandRole ?? '');
-      document.getElementById('brandEmail').value = isLegacyBrand ? 'trinimaro@gmail.com' : (data.brandEmail ?? '');
-      document.getElementById('brandPhone').value = isLegacyBrand ? '+56 9 9240 5072' : (data.brandPhone ?? '');
-      document.getElementById('client').value = data.client ?? '';
-      document.getElementById('docNumber').value = data.docNumber ?? '';
-      document.getElementById('validUntil').value = data.validUntil ?? '';
-      document.getElementById('ivaRate').value = data.ivaRate ?? '19';
-      document.getElementById('discountValue').value = data.discountValue ?? '0';
-      document.getElementById('discountType').value = data.discountType ?? 'percent';
-      document.getElementById('docType').value = data.docType ?? 'afecta';
-      document.getElementById('exemptNote').value = data.exemptNote ?? 'Operación exenta de IVA según Art. 12, letra E, N°7, D.L. 825';
-      document.getElementById('notes').value = data.notes ?? '';
-      (data.items && data.items.length ? data.items : [{ desc: '', qty: 1, price: 0 }])
-        .forEach(it => itemsBody.appendChild(makeRow(it.desc, it.qty, it.price, it.catalogId)));
+      applyData(JSON.parse(raw));
     } catch (e) {
       itemsBody.appendChild(makeRow('', 1, 0));
     }
+  }
+
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveToHistory() {
+    const data = buildDataSnapshot();
+    const history = loadHistory();
+    const entry = {
+      docNumber: data.docNumber || '',
+      client: data.client || 'Sin nombre',
+      savedDate: document.getElementById('docDate').textContent,
+      total: document.getElementById('totalOut').textContent,
+      savedAt: Date.now(),
+      data,
+    };
+    const idx = entry.docNumber ? history.findIndex(h => h.docNumber === entry.docNumber) : -1;
+    if (idx > -1) history[idx] = entry; else history.unshift(entry);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistoryList();
+  }
+
+  function openHistoryEntry(index) {
+    const history = loadHistory();
+    const entry = history[index];
+    if (!entry) return;
+    if (!confirm(`¿Abrir la cotización N° ${entry.docNumber} de ${entry.client}? Se reemplazará lo que tienes en pantalla ahora (si no lo has guardado, se perderá).`)) return;
+    applyData(entry.data);
+    recalc();
+  }
+
+  function deleteHistoryEntry(index) {
+    const history = loadHistory();
+    const entry = history[index];
+    if (!entry) return;
+    if (!confirm(`¿Eliminar del historial la cotización N° ${entry.docNumber} de ${entry.client}?`)) return;
+    history.splice(index, 1);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistoryList();
+  }
+
+  function renderHistoryList() {
+    const container = document.getElementById('historyListContent');
+    const history = loadHistory();
+    if (!history.length) {
+      container.innerHTML = '<p class="history-empty">Todavía no has guardado ninguna cotización.</p>';
+      return;
+    }
+    container.innerHTML = history.map((h, i) => `
+      <div class="history-row">
+        <div class="history-info">
+          <strong>${escapeHtml(h.client)}</strong>
+          <span class="history-meta">N° ${escapeHtml(h.docNumber)} · ${escapeHtml(h.savedDate)} · ${escapeHtml(h.total)}</span>
+        </div>
+        <div class="history-actions">
+          <button type="button" class="history-open" data-index="${i}">Abrir</button>
+          <button type="button" class="history-delete" data-index="${i}">Eliminar</button>
+        </div>
+      </div>
+    `).join('');
+    container.querySelectorAll('.history-open').forEach(btn => {
+      btn.addEventListener('click', () => openHistoryEntry(parseInt(btn.dataset.index, 10)));
+    });
+    container.querySelectorAll('.history-delete').forEach(btn => {
+      btn.addEventListener('click', () => deleteHistoryEntry(parseInt(btn.dataset.index, 10)));
+    });
   }
 
   document.getElementById('addRow').addEventListener('click', () => {
@@ -888,6 +1014,7 @@ delacuestamarin@gmail.com</div>
   });
 
   document.getElementById('printBtn').addEventListener('click', () => {
+    saveToHistory();
     const safe = s => (s || '').trim().replace(/[\\/:*?"<>|]/g, '-');
     const client = safe(document.getElementById('client').value) || 'Cliente';
     const docNumber = safe(document.getElementById('docNumber').value) || 'Cotizacion';
@@ -895,6 +1022,15 @@ delacuestamarin@gmail.com</div>
     document.title = `Cotizacion ${docNumber} - ${client}`;
     window.addEventListener('afterprint', () => { document.title = originalTitle; }, { once: true });
     window.print();
+  });
+
+  document.getElementById('saveHistoryBtn').addEventListener('click', () => {
+    saveToHistory();
+    const btn = document.getElementById('saveHistoryBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Guardado ✓';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
   });
 
   document.getElementById('docType').addEventListener('change', recalc);
@@ -908,6 +1044,7 @@ delacuestamarin@gmail.com</div>
   buildServiceGuide();
   load();
   recalc();
+  renderHistoryList();
 })();
 </script>
 </body>
