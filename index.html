@@ -145,6 +145,7 @@
     display: block;
   }
   textarea.f-desc:focus { outline: none; background: var(--accent-soft); }
+  .f-desc-print { display: none; }
   .col-qty input, .col-price input { text-align: right; }
   .col-total { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .col-del { width: 32px; text-align: center; }
@@ -427,6 +428,14 @@
     input, textarea, select {
       border: none !important;
       background: transparent !important;
+    }
+    .f-desc { display: none !important; }
+    .f-desc-print {
+      display: block !important;
+      font-size: 14px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      padding: 4px 2px;
     }
     .discount-type {
       appearance: none;
@@ -868,6 +877,7 @@ delacuestamarin@gmail.com</div>
       </td>
       <td>
         <textarea class="f-desc" rows="1" placeholder="Escribe una descripción">${escapeHtml(desc || '')}</textarea>
+        <div class="f-desc-print"></div>
       </td>
       <td class="col-qty"><input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}"></td>
       <td class="col-price"><input class="f-price" type="number" min="0" step="1" value="${price ?? 0}"></td>
@@ -905,11 +915,13 @@ delacuestamarin@gmail.com</div>
     });
 
     const descEl = tr.querySelector('.f-desc');
-    descEl.addEventListener('input', () => { autoGrow(descEl); save(); });
+    const descPrintEl = tr.querySelector('.f-desc-print');
+    descEl.addEventListener('input', () => { autoGrow(descEl); descPrintEl.textContent = descEl.value; save(); });
     tr.querySelector('.f-qty').addEventListener('input', recalc);
     tr.querySelector('.f-price').addEventListener('input', recalc);
     tr.querySelector('.del-btn').addEventListener('click', () => { tr.remove(); recalc(); });
     requestAnimationFrame(() => autoGrow(descEl));
+    descPrintEl.textContent = descEl.value;
     return tr;
   }
 
@@ -1104,11 +1116,15 @@ delacuestamarin@gmail.com</div>
     const restoreFns = [];
     itemsBody.querySelectorAll('tr').forEach(tr => {
       const descEl = tr.querySelector('.f-desc');
+      const descPrintEl = tr.querySelector('.f-desc-print');
       const serviceName = tr.querySelector('.f-catalog-search').value.trim();
       if (!descEl.value.trim() && serviceName) {
         descEl.value = serviceName;
         autoGrow(descEl);
-        restoreFns.push(() => { descEl.value = ''; autoGrow(descEl); });
+        descPrintEl.textContent = serviceName;
+        restoreFns.push(() => { descEl.value = ''; autoGrow(descEl); descPrintEl.textContent = ''; });
+      } else {
+        descPrintEl.textContent = descEl.value;
       }
     });
 
