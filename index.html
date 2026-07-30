@@ -888,6 +888,16 @@ delacuestamarin@gmail.com</div>
     const searchInput = tr.querySelector('.f-catalog-search');
     const dropdown = tr.querySelector('.catalog-dropdown');
 
+    const descEl = tr.querySelector('.f-desc');
+    const descPrintEl = tr.querySelector('.f-desc-print');
+
+    function syncDescPrint() {
+      const serviceName = comboWrap.dataset.catalogId ? searchInput.value.trim() : '';
+      const descValue = descEl.value.trim();
+      if (serviceName && descValue) descPrintEl.textContent = `${serviceName} — ${descValue}`;
+      else descPrintEl.textContent = serviceName || descValue;
+    }
+
     function closeDropdown() { dropdown.classList.remove('open'); }
     function openDropdown() {
       renderCatalogDropdown(dropdown, searchInput.value, selectCatalogItem);
@@ -899,29 +909,28 @@ delacuestamarin@gmail.com</div>
       searchInput.value = it ? it.name : '';
       if (it) tr.querySelector('.f-price').value = it.min;
       closeDropdown();
+      syncDescPrint();
       recalc();
     }
 
     searchInput.addEventListener('focus', () => { searchInput.select(); openDropdown(); });
-    searchInput.addEventListener('input', () => { comboWrap.dataset.catalogId = ''; openDropdown(); });
+    searchInput.addEventListener('input', () => { comboWrap.dataset.catalogId = ''; syncDescPrint(); openDropdown(); });
     searchInput.addEventListener('blur', () => {
       setTimeout(() => {
         closeDropdown();
-        if (!comboWrap.dataset.catalogId) searchInput.value = '';
+        if (!comboWrap.dataset.catalogId) { searchInput.value = ''; syncDescPrint(); }
       }, 100);
     });
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { closeDropdown(); searchInput.blur(); }
     });
 
-    const descEl = tr.querySelector('.f-desc');
-    const descPrintEl = tr.querySelector('.f-desc-print');
-    descEl.addEventListener('input', () => { autoGrow(descEl); descPrintEl.textContent = descEl.value; save(); });
+    descEl.addEventListener('input', () => { autoGrow(descEl); syncDescPrint(); save(); });
     tr.querySelector('.f-qty').addEventListener('input', recalc);
     tr.querySelector('.f-price').addEventListener('input', recalc);
     tr.querySelector('.del-btn').addEventListener('click', () => { tr.remove(); recalc(); });
     requestAnimationFrame(() => autoGrow(descEl));
-    descPrintEl.textContent = descEl.value;
+    syncDescPrint();
     return tr;
   }
 
@@ -1112,26 +1121,7 @@ delacuestamarin@gmail.com</div>
     const docNumber = safe(document.getElementById('docNumber').value) || 'Cotizacion';
     const originalTitle = document.title;
     document.title = `Cotizacion ${docNumber} - ${client}`;
-
-    const restoreFns = [];
-    itemsBody.querySelectorAll('tr').forEach(tr => {
-      const descEl = tr.querySelector('.f-desc');
-      const descPrintEl = tr.querySelector('.f-desc-print');
-      const serviceName = tr.querySelector('.f-catalog-search').value.trim();
-      if (!descEl.value.trim() && serviceName) {
-        descEl.value = serviceName;
-        autoGrow(descEl);
-        descPrintEl.textContent = serviceName;
-        restoreFns.push(() => { descEl.value = ''; autoGrow(descEl); descPrintEl.textContent = ''; });
-      } else {
-        descPrintEl.textContent = descEl.value;
-      }
-    });
-
-    window.addEventListener('afterprint', () => {
-      document.title = originalTitle;
-      restoreFns.forEach(fn => fn());
-    }, { once: true });
+    window.addEventListener('afterprint', () => { document.title = originalTitle; }, { once: true });
     window.print();
   });
 
