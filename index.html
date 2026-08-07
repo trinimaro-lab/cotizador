@@ -561,7 +561,7 @@ delacuestamarin@gmail.com</div>
   </div>
 
 <script>
-(function () {
+(async function () {
   const itemsBody = document.getElementById('itemsBody');
   const STORAGE_KEY = 'cotizador-diseno-data';
   const LAST_NUMBER_KEY = 'cotizador-last-docnumber';
@@ -581,7 +581,7 @@ delacuestamarin@gmail.com</div>
     return String(next).padStart(3, '0');
   }
 
-  const CATALOG = [
+  const CATALOG_DEFAULT = [
     {
       category: '1. Digital',
       groups: [
@@ -796,10 +796,90 @@ delacuestamarin@gmail.com</div>
     },
   ];
 
-  const FLAT_ITEMS = [];
-  CATALOG.forEach(cat => cat.groups.forEach(g => g.items.forEach(it => {
-    FLAT_ITEMS.push({ id: `${cat.category}__${g.group}__${it.name}`, category: cat.category, group: g.group, ...it });
-  })));
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1wBLzjaf4_3uQfyj7Gf2rxQnPB82KtMwqLouX4mhLWKM/export?format=csv&gid=0';
+  const CATALOG_CACHE_KEY = 'cotizador-catalog-cache';
+
+  let CATALOG = CATALOG_DEFAULT;
+  let FLAT_ITEMS = [];
+
+  function rebuildFlatItems() {
+    FLAT_ITEMS = [];
+    CATALOG.forEach(cat => cat.groups.forEach(g => g.items.forEach(it => {
+      FLAT_ITEMS.push({ id: `${cat.category}__${g.group}__${it.name}`, category: cat.category, group: g.group, ...it });
+    })));
+  }
+
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else { inQuotes = false; }
+        } else {
+          field += c;
+        }
+      } else if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        row.push(field); field = '';
+      } else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        row = [];
+      } else {
+        field += c;
+      }
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function buildCatalogFromRows(rows) {
+    const dataRows = rows.slice(1);
+    const catalogMap = new Map();
+    dataRows.forEach(r => {
+      if (r.length < 6 || !r[0] || !r[2]) return;
+      const [category, group, name, desc, minStr, maxStr] = r;
+      const min = parseInt(String(minStr).replace(/[^0-9.-]/g, ''), 10) || 0;
+      const max = parseInt(String(maxStr).replace(/[^0-9.-]/g, ''), 10) || 0;
+      if (!catalogMap.has(category)) catalogMap.set(category, new Map());
+      const groupMap = catalogMap.get(category);
+      if (!groupMap.has(group)) groupMap.set(group, []);
+      groupMap.get(group).push({ name, desc, min, max });
+    });
+    const catalog = [];
+    catalogMap.forEach((groupMap, category) => {
+      const groups = [];
+      groupMap.forEach((items, group) => groups.push({ group, items }));
+      catalog.push({ category, groups });
+    });
+    return catalog;
+  }
+
+  async function loadCatalog() {
+    try {
+      const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const catalog = buildCatalogFromRows(parseCSV(text));
+      if (!catalog.length) throw new Error('Catálogo vacío');
+      localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(catalog));
+      return catalog;
+    } catch (e) {
+      console.warn('No se pudo cargar el catálogo desde Google Sheets, usando respaldo.', e);
+      try {
+        const cached = localStorage.getItem(CATALOG_CACHE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch (e2) { /* ignore, fall through to default */ }
+      return CATALOG_DEFAULT;
+    }
+  }
 
   function currency(n) {
     if (isNaN(n)) n = 0;
@@ -1142,6 +1222,8 @@ delacuestamarin@gmail.com</div>
   document.querySelectorAll('.meta-grid input, #brandName, #brandRole, #brandEmail, #brandPhone, #notes, #ivaRate')
     .forEach(el => el.addEventListener('input', () => { save(); if (el.id === 'ivaRate') recalc(); }));
 
+  CATALOG = await loadCatalog();
+  rebuildFlatItems();
   buildServiceGuide();
   load();
   recalc();
