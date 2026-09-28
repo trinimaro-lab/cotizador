@@ -1070,7 +1070,14 @@ delacuestamarin@gmail.com</div>
     const data = buildDataSnapshot();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     const parsedNumber = parseInt(data.docNumber, 10);
-    if (!isNaN(parsedNumber)) localStorage.setItem(LAST_NUMBER_KEY, String(parsedNumber));
+    if (!isNaN(parsedNumber)) {
+      // Solo avanza el contador, nunca lo retrocede (evita que abrir una
+      // cotización antigua desde el historial "resetee" el próximo N°).
+      const currentLast = parseInt(localStorage.getItem(LAST_NUMBER_KEY), 10);
+      if (isNaN(currentLast) || parsedNumber > currentLast) {
+        localStorage.setItem(LAST_NUMBER_KEY, String(parsedNumber));
+      }
+    }
   }
 
   function applyData(data) {
