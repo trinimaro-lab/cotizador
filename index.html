@@ -474,7 +474,7 @@
       </div>
       <div class="meta-field">
         <label>Válida hasta</label>
-        <input id="validUntil" type="date" />
+        <div class="meta-static" id="validUntil"></div>
       </div>
     </div>
 
@@ -566,12 +566,19 @@ delacuestamarin@gmail.com</div>
   const LAST_NUMBER_KEY = 'cotizador-last-docnumber';
   const HISTORY_KEY = 'cotizador-history';
 
-  function setTodayDate() {
-    const d = new Date();
+  function formatDateDDMMYYYY(d) {
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
-    document.getElementById('docDate').textContent = `${dd}-${mm}-${yyyy}`;
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  function setTodayDate() {
+    const today = new Date();
+    document.getElementById('docDate').textContent = formatDateDDMMYYYY(today);
+    const validUntil = new Date(today);
+    validUntil.setDate(validUntil.getDate() + 14);
+    document.getElementById('validUntil').textContent = formatDateDDMMYYYY(validUntil);
   }
 
   function nextDocNumber() {
@@ -1050,7 +1057,6 @@ delacuestamarin@gmail.com</div>
       brandPhone: document.getElementById('brandPhone').value,
       client: document.getElementById('client').value,
       docNumber: document.getElementById('docNumber').value,
-      validUntil: document.getElementById('validUntil').value,
       ivaRate: document.getElementById('ivaRate').value,
       discountValue: document.getElementById('discountValue').value,
       discountType: document.getElementById('discountType').value,
@@ -1088,7 +1094,6 @@ delacuestamarin@gmail.com</div>
     document.getElementById('brandPhone').value = isLegacyBrand ? '+56 9 9240 5072' : (data.brandPhone ?? '');
     document.getElementById('client').value = data.client ?? '';
     document.getElementById('docNumber').value = data.docNumber ?? '';
-    document.getElementById('validUntil').value = data.validUntil ?? '';
     document.getElementById('ivaRate').value = data.ivaRate ?? '19';
     document.getElementById('discountValue').value = data.discountValue ?? '0';
     document.getElementById('discountType').value = data.discountType ?? 'percent';
