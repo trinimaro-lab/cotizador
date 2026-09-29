@@ -104,26 +104,34 @@
     border-bottom: 1px solid transparent;
   }
 
-  table.items {
+  .items {
     width: 100%;
-    border-collapse: collapse;
     margin-bottom: 8px;
   }
-  table.items th {
-    text-align: left;
+  .items-head {
+    display: grid;
+    grid-template-columns: 1fr 70px 120px 120px 28px;
+    gap: 8px;
+    padding: 8px 6px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .items-head span {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
-    padding: 8px 6px;
-    border-bottom: 2px solid var(--ink);
   }
-  table.items td {
+  .item-row {
     padding: 6px;
     border-bottom: 1px solid var(--line);
-    vertical-align: middle;
   }
-  table.items input {
+  .item-top {
+    display: grid;
+    grid-template-columns: 1fr 70px 120px 120px 28px;
+    gap: 8px;
+    align-items: center;
+  }
+  .item-top input {
     width: 100%;
     border: none;
     background: transparent;
@@ -131,7 +139,7 @@
     font-size: 14px;
     padding: 4px 2px;
   }
-  table.items input:focus { outline: none; background: var(--accent-soft); }
+  .item-top input:focus { outline: none; background: var(--accent-soft); }
   textarea.f-desc {
     width: 100%;
     border: none;
@@ -139,6 +147,7 @@
     font-family: inherit;
     font-size: 14px;
     padding: 4px 2px;
+    margin-top: 2px;
     resize: none;
     overflow: hidden;
     line-height: 1.4;
@@ -146,9 +155,9 @@
   }
   textarea.f-desc:focus { outline: none; background: var(--accent-soft); }
   .f-desc-print { display: none; }
-  .col-qty input, .col-price input { text-align: right; }
-  .col-total { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .col-del { width: 32px; text-align: center; }
+  .f-qty, .f-price { text-align: right; }
+  .f-total { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .col-del { width: 28px; text-align: center; }
   .catalog-combo { position: relative; }
   .f-catalog-search {
     width: 100%;
@@ -443,7 +452,7 @@
       padding: 0;
     }
     .meta-field input { border-bottom: none; }
-    table.items td { border-bottom: 1px solid #ccc; }
+    .item-row { border-bottom: 1px solid #ccc; }
   }
 </style>
 </head>
@@ -483,19 +492,16 @@
       <div id="historyListContent"></div>
     </details>
 
-    <table class="items">
-      <thead>
-        <tr>
-          <th class="col-catalog" style="width:27%">Servicio</th>
-          <th style="width:23%">Descripción</th>
-          <th class="col-qty" style="width:12%">Cant.</th>
-          <th class="col-price" style="width:16%">Precio unit.</th>
-          <th style="width:16%">Subtotal</th>
-          <th class="col-del"></th>
-        </tr>
-      </thead>
-      <tbody id="itemsBody"></tbody>
-    </table>
+    <div class="items">
+      <div class="items-head">
+        <span class="col-catalog">Servicio</span>
+        <span>Cant.</span>
+        <span>Precio unit.</span>
+        <span>Subtotal</span>
+        <span class="col-del"></span>
+      </div>
+      <div id="itemsBody"></div>
+    </div>
 
     <button class="add-row" id="addRow">+ Agregar ítem</button>
 
@@ -632,6 +638,16 @@ delacuestamarin@gmail.com</div>
             { name: 'Agregar contenido a pantalla existente (solo diseño)', desc: 'Sumar un elemento o sección nueva a una pantalla ya diseñada.', min: 40000, max: 80000 },
             { name: 'Diseño de nuevo flujo/pantalla', desc: 'Pantalla o flujo que no existía (ej. un nuevo proceso de checkout), incluye wireframe y diseño final.', min: 150000, max: 350000 },
             { name: 'Prototipo interactivo navegable', desc: 'Conectar las pantallas con clics/transiciones para probar la app sin programarla.', min: 200000, max: 500000 },
+          ],
+        },
+        {
+          group: 'D) Página web con catálogo (Supabase)',
+          items: [
+            { name: 'Catálogo chico (hasta 5 productos/variaciones) — pyme', desc: 'Sitio HTML a medida con catálogo y panel de administración conectado a Supabase (CRUD sin tocar código), para cargar y probar hasta 5 productos o variaciones. Incluye la infraestructura completa (base de datos, panel de edición, diseño del sitio público). Ideal para pymes con pocos productos.', min: 500000, max: 900000 },
+            { name: 'Catálogo mediano (6–20 productos)', desc: 'Mismo desarrollo (sitio + panel de administración en Supabase), con carga y prueba de 6 a 20 productos o variaciones.', min: 1200000, max: 2000000 },
+            { name: 'Catálogo grande (21+ productos o multi-categoría)', desc: 'Mismo desarrollo (sitio + panel de administración en Supabase), con carga y prueba de 21 o más productos, o catálogo organizado en múltiples categorías.', min: 2000000, max: 3500000 },
+            { name: 'Integración WhatsApp (botón de contacto)', desc: 'Botón flotante o link "click to chat" con mensaje predefinido, para que el cliente escriba directo por WhatsApp desde el sitio.', min: 30000, max: 60000 },
+            { name: 'Conexión redes sociales del cliente', desc: 'Íconos/links a Instagram, Facebook, TikTok, etc. integrados al diseño del sitio.', min: 15000, max: 30000 },
           ],
         },
       ],
@@ -952,23 +968,22 @@ delacuestamarin@gmail.com</div>
   }
 
   function makeRow(desc, qty, price, catalogId) {
-    const tr = document.createElement('tr');
+    const tr = document.createElement('div');
+    tr.className = 'item-row';
     const initialItem = catalogId ? FLAT_ITEMS.find(f => f.id === catalogId) : null;
     tr.innerHTML = `
-      <td class="col-catalog">
-        <div class="catalog-combo" data-catalog-id="${catalogId || ''}">
+      <div class="item-top">
+        <div class="catalog-combo col-catalog" data-catalog-id="${catalogId || ''}">
           <input class="f-catalog-search" type="text" placeholder="Buscar servicio..." autocomplete="off" value="${escapeHtml(initialItem ? initialItem.name : '')}">
           <div class="catalog-dropdown"></div>
         </div>
-      </td>
-      <td>
-        <textarea class="f-desc" rows="1" placeholder="Escribe una descripción">${escapeHtml(desc || '')}</textarea>
-        <div class="f-desc-print"></div>
-      </td>
-      <td class="col-qty"><input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}"></td>
-      <td class="col-price"><input class="f-price" type="number" min="0" step="1" value="${price ?? 0}"></td>
-      <td class="col-total f-total">${currency((qty ?? 1) * (price ?? 0))}</td>
-      <td class="col-del"><button class="del-btn" title="Eliminar ítem">✕</button></td>
+        <input class="f-qty" type="number" min="0" step="1" value="${qty ?? 1}">
+        <input class="f-price" type="number" min="0" step="1" value="${price ?? 0}">
+        <div class="f-total">${currency((qty ?? 1) * (price ?? 0))}</div>
+        <button class="del-btn col-del" title="Eliminar ítem">✕</button>
+      </div>
+      <textarea class="f-desc" rows="1" placeholder="Escribe una descripción">${escapeHtml(desc || '')}</textarea>
+      <div class="f-desc-print"></div>
     `;
     const comboWrap = tr.querySelector('.catalog-combo');
     const searchInput = tr.querySelector('.f-catalog-search');
@@ -1022,7 +1037,7 @@ delacuestamarin@gmail.com</div>
 
   function recalc() {
     let subtotal = 0;
-    itemsBody.querySelectorAll('tr').forEach(tr => {
+    itemsBody.querySelectorAll('.item-row').forEach(tr => {
       const qty = parseNum(tr.querySelector('.f-qty').value);
       const price = parseNum(tr.querySelector('.f-price').value);
       const total = qty * price;
@@ -1063,7 +1078,7 @@ delacuestamarin@gmail.com</div>
       docType: document.getElementById('docType').value,
       exemptNote: document.getElementById('exemptNote').value,
       notes: document.getElementById('notes').value,
-      items: Array.from(itemsBody.querySelectorAll('tr')).map(tr => ({
+      items: Array.from(itemsBody.querySelectorAll('.item-row')).map(tr => ({
         desc: tr.querySelector('.f-desc').value,
         qty: tr.querySelector('.f-qty').value,
         price: tr.querySelector('.f-price').value,
